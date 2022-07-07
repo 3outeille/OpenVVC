@@ -33,6 +33,8 @@
 
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h> //#REMOVEME, for rand()
+#include <immintrin.h>
 
 #include "ovutils.h"
 #include "ovmem.h"
@@ -661,6 +663,28 @@ void fg_simulate_grain_blk8x8(int32_t *grainStripe, uint32_t grainStripeOffsetBl
   }
   return;
 }
+
+void fg_simulate_grain_blk8x8_sse4(int32_t *grainStripe, uint32_t grainStripeOffsetBlk8,
+  uint32_t width, uint8_t log2ScaleFactor, int16_t scaleFactor, uint32_t kOffset, uint32_t lOffset, uint8_t h, uint8_t v, uint32_t xSize)
+{
+    uint32_t next_row = 0;
+    uint32_t grainStripeOffsetBlk8_l = grainStripeOffsetBlk8 + (next_row * width);
+
+    for (uint32_t l = 0; l < 8 + xSize; l+=1) {
+      if (l % 2 == 0) {
+        if (l != 0)
+          grainStripeOffsetBlk8_l = grainStripeOffsetBlk8 + (++next_row * width);
+      }
+      else {
+        grainStripeOffsetBlk8_l = grainStripeOffsetBlk8 + (next_row * width) + 4;
+      }
+
+      __m128i tmp = _mm_set_epi32(rand() % (1920 * 16), rand() % (1920 * 16), rand() % (1920 * 16), rand() % (1920 * 16));
+      _mm_store_si128(&grainStripe[grainStripeOffsetBlk8_l], tmp);
+    }
+
+    return;
+ }
 
 // void fg_data_base_generation(int8_t****  dataBase, uint8_t enableDeblocking)
 void fg_data_base_generation( uint8_t enableDeblocking)
