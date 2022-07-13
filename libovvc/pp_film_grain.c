@@ -597,6 +597,36 @@ int16_t fg_compute_block_avg(int16_t *dstSampleBlk8, uint32_t widthComp, uint16_
   return blockAvg;
 }
 
+int16_t fg_compute_block_avg_sse4(int16_t *dstSampleBlk8, uint32_t widthComp, uint16_t *pNumSamples,
+                      uint8_t ySize, uint8_t xSize, uint8_t bitDepth)
+{
+  uint32_t blockAvg   = 0;
+  uint16_t numSamples = 0;
+
+  __m128 acc = _mm_setzero_ps();
+  for (int i = 0; i < xSize * ySize; i+=4, numSamples+=4)
+  {
+      __m128 x = _mm_loadu_ps(&dstSampleBlk8[i]);
+      acc = _mm_add_ps(acc, x);
+  }
+
+  
+  if (numSamples > 0)
+  {
+     int tmp[4];
+    _mm_storeu_ps(tmp, acc);
+    blockAvg = (tmp[0] + tmp[1] + tmp[2] + tmp[3]) / numSamples;
+    blockAvg >>= (bitDepth - 8); /* to handle high bit depths */
+  }
+
+  // assert(blockAvg < (1 << 8));
+  *pNumSamples = numSamples;
+
+  // blockAvg = (int16_t) OVMIN(OVMAX(0, blockAvg), (1 << 8) - 1 );
+  blockAvg = (int16_t) ov_clip_uintp2(blockAvg, 8 );
+  return blockAvg;
+}
+
 void fg_deblock_grain_stripe(int32_t *grainStripe, uint32_t widthComp, uint32_t strideComp)
 {
   int32_t left1, left0, right0, right1;
