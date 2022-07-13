@@ -600,22 +600,24 @@ int16_t fg_compute_block_avg(int16_t *dstSampleBlk8, uint32_t widthComp, uint16_
 int16_t fg_compute_block_avg_sse4(int16_t *dstSampleBlk8, uint32_t widthComp, uint16_t *pNumSamples,
                       uint8_t ySize, uint8_t xSize, uint8_t bitDepth)
 {
-  uint32_t blockAvg   = 0;
+  uint16_t blockAvg   = 0;
   uint16_t numSamples = 0;
 
-  __m128 acc = _mm_setzero_ps();
-  for (int i = 0; i < xSize * ySize; i+=4, numSamples+=4)
+  __m128i acc = _mm_setzero_si128();
+
+  for (int i = 0; i < ySize; i+=1, numSamples+=8)
   {
-      __m128 x = _mm_loadu_ps(&dstSampleBlk8[i]);
-      acc = _mm_add_ps(acc, x);
+      __m128i x = _mm_loadu_si128(&dstSampleBlk8[i*widthComp]);
+      acc = _mm_adds_epi16(acc, x);
   }
 
-  
   if (numSamples > 0)
   {
-     int tmp[4];
-    _mm_storeu_ps(tmp, acc);
-    blockAvg = (tmp[0] + tmp[1] + tmp[2] + tmp[3]) / numSamples;
+    acc = _mm_hadd_epi16(acc, acc);
+    acc = _mm_hadd_epi16(acc, acc);
+    acc = _mm_hadd_epi16(acc, acc);
+    blockAvg = _mm_cvtsi128_si32(acc);
+    blockAvg /= numSamples;
     blockAvg >>= (bitDepth - 8); /* to handle high bit depths */
   }
 
@@ -623,7 +625,7 @@ int16_t fg_compute_block_avg_sse4(int16_t *dstSampleBlk8, uint32_t widthComp, ui
   *pNumSamples = numSamples;
 
   // blockAvg = (int16_t) OVMIN(OVMAX(0, blockAvg), (1 << 8) - 1 );
-  blockAvg = (int16_t) ov_clip_uintp2(blockAvg, 8 );
+  blockAvg = (int16_t) ov_clip_uintp2((uint32_t)blockAvg, 8);
   return blockAvg;
 }
 
