@@ -1,5 +1,6 @@
 #include "post_proc.c"
 #include "pp_film_grain.c"
+#include "fg_compute_block_avg_asm.h"
 
 #include <time.h>
 #include <stdlib.h>
@@ -84,9 +85,13 @@ int main(int argc, char **argv)
 
     OVFrame *frame = ovframepool_request_frame(pool);
 
-    memset(frame->data[0], 128, frame->size[0]);
-    memset(frame->data[1], 128, frame->size[1]);
-    memset(frame->data[2], 128, frame->size[2]);
+    // memset(frame->data[0], 128, frame->size[0]);
+    // memset(frame->data[1], 128, frame->size[1]);
+    // memset(frame->data[2], 128, frame->size[2]);
+    // printf("%lu, %lu, %lu\n", frame->size[0], frame->size[1],frame->size[2]);
+    memset(frame->data[0], 0, frame->size[0]);
+    memset(frame->data[1], 0, frame->size[1]);
+    memset(frame->data[2], 0, frame->size[2]);
 
     struct OVSEIFGrain sei_fg = {
     /* uint8_t */ .fg_characteristics_cancel_flag = 0,
@@ -123,20 +128,26 @@ int main(int argc, char **argv)
 
     srand(42);
 
-    pp_process_frame(&sei, &frame);
-    FILE *out_file = fopen("simd.frame", "w");
-    write_decoded_frame_to_file(frame, out_file);
+    // printf("First time\n");
+    // pp_process_frame(&sei, &frame);
+    // FILE *out_file = fopen("ref.frame", "w");
+    // write_decoded_frame_to_file(frame, out_file);
 
-    // size_t nb_fct_call = 3;
-    // size_t iter_per_fct = 5;
+    // printf("Second time\n");
+    // pp_process_frame(&sei, &frame);
+
+    // size_t nb_fct_call = 100;
+    // size_t iter_per_fct = 10;
 
     // run_benchmark_pp_process_frame(&pp_process_frame,
-    //  "pp_process_frame (fg_simulate_grain_blk8x8 OPTI)",
+    //  "pp_process_frame (fg_compute_block_avg)",
     //   nb_fct_call,
     //   iter_per_fct,
     //   sei,
     //   frame
     // );
+    
+    func_fg_compute_block_avg_asm();
 
     return 0;
 }
