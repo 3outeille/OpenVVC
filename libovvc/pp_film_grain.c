@@ -883,7 +883,7 @@ void fg_grain_apply_pic(int16_t** dstComp, int16_t** srcComp, struct OVSEIFGrain
     int32_t   *grainStripe; /* worth a row of 16x16 : Max size : 16xw;*/
     int32_t   yOffset8x8, xOffset8x8;
     uint32_t  picOffset, x, y, intensityInt;
-    int16_t   blockAvg; 
+    int16_t   blockAvg;
     uint32_t  pseudoRandValEc; /* ec : seed to be used for the psudo random generator for a given color component */
     uint32_t  picOrderCntOffset=0;
 
@@ -975,11 +975,17 @@ void fg_grain_apply_pic(int16_t** dstComp, int16_t** srcComp, struct OVSEIFGrain
                         grainStripeOffsetBlk8 = grainStripeOffset + offsetBlk8x8;
 
                         srcSampleBlk8 = srcSampleBlk16 + offsetBlk8x8;
+                        #if __SSE4_1__ || __SSE4_2__
+                        blockAvg      = fg_compute_block_avg_sse4(srcSampleBlk8, strideComp[compCtr], &numSamples,
+                              OVMIN(8, (heightComp[compCtr] - y - yOffset8x8)),
+                              OVMIN(8, (widthComp[compCtr] - x - xOffset8x8)),
+                              bitDepth);
+                        #else
                         blockAvg      = fg_compute_block_avg(srcSampleBlk8, strideComp[compCtr], &numSamples,
                               OVMIN(8, (heightComp[compCtr] - y - yOffset8x8)),
                               OVMIN(8, (widthComp[compCtr] - x - xOffset8x8)),
                               bitDepth);
-
+                        #endif
                         /* Handling of non 8x8 blocks along with 8x8 blocks */
                         if (numSamples > 0)
                         {
