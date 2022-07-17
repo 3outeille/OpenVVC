@@ -136,18 +136,18 @@ int main(int argc, char **argv)
     // printf("Second time\n");
     // pp_process_frame(&sei, &frame);
 
-    // size_t nb_fct_call = 100;
-    // size_t iter_per_fct = 10;
+    size_t nb_fct_call = 100;
+    size_t iter_per_fct = 10;
 
-    // run_benchmark_pp_process_frame(&pp_process_frame,
-    //  "pp_process_frame (fg_compute_block_avg)",
-    //   nb_fct_call,
-    //   iter_per_fct,
-    //   sei,
-    //   frame
-    // );
-    
-    func_fg_compute_block_avg_asm();
+    run_benchmark_pp_process_frame(&pp_process_frame,
+     "pp_process_frame",
+      nb_fct_call,
+      iter_per_fct,
+      sei,
+      frame
+    );
+
+    // func_fg_compute_block_avg_asm();
 
     return 0;
 }
